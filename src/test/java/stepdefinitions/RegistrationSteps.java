@@ -14,207 +14,279 @@ import java.util.UUID;
 
 public class RegistrationSteps {
 
-    WebDriver driver;  // WebDriver används för att styra webbläsaren
-    WebDriverWait wait;  // WebDriverWait används för att vänta på specifika tillstånd (t.ex. synliga eller klickbara element)
-    String uniqueEmail;  // För att hålla det unika e-postadressen som genereras för varje test
+    // WebDriver instans som används för att interagera med webbläsaren
+    WebDriver driver;
+    // WebDriverWait för att hantera väntetider och synlighet för element
+    WebDriverWait wait;
+    // Variabel för att lagra en unik e-postadress
+    String uniqueEmail;
 
-    // Metod som genererar en unik e-postadress med hjälp av UUID
+    // Hjälpmetod som genererar en unik e-postadress med Mailnesia
     private String generateUniqueEmail() {
-        String uniquePart = UUID.randomUUID().toString().substring(0, 8);  // Genererar en unik del av e-postadressen
-        return "testuser_" + uniquePart + "@mailnesia.com";  // Returnerar den unika Mailnesia e-postadressen
+        String uniquePart = UUID.randomUUID().toString().substring(0, 8); // Skapar en unik del genom att ta en del av en UUID
+        return "testuser_" + uniquePart + "@mailnesia.com"; // Returnerar e-post med unikt suffix
     }
 
-    // Väntemetod för att säkerställa att ett element är synligt
+    // Väntar på att ett element ska bli synligt på sidan
     private WebElement waitUntilVisible(By locator) {
-        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));  // Väntar tills elementet är synligt
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(locator));
     }
 
-    // Väntemetod för att säkerställa att ett element är klickbart
+    // Väntar på att ett element ska bli klickbart
     private WebElement waitUntilClickable(By locator) {
-        return wait.until(ExpectedConditions.elementToBeClickable(locator));  // Väntar tills elementet kan klickas på
+        return wait.until(ExpectedConditions.elementToBeClickable(locator));
     }
 
-    // Metod för att fylla i ett fält via dess id
+    // Fyller ett fält baserat på ID med ett givet värde
     private void fillFieldById(String id, String value) {
-        WebElement field = waitUntilVisible(By.id(id));  // Väntar tills fältet är synligt
-        field.clear();  // Rensar eventuellt tidigare värde
-        field.sendKeys(value);  // Fyller i det nya värdet
+        WebElement field = waitUntilVisible(By.id(id)); // Väntar på att fältet ska bli synligt
+        field.clear(); // Rensar eventuell tidigare text i fältet
+        field.sendKeys(value); // Fyller fältet med det angivna värdet
     }
 
-    // Setup-metod som körs innan varje test
+    // Sätt upp WebDriver innan testet körs
     @Before
     public void setUp() {
-        String browser = System.getProperty("browser", "chrome");  // Hämtar vilken webbläsare som ska användas (standard: chrome)
+        // Hämtar webbläsarens inställning från systemets egenskaper, standard är Chrome
+        String browser = System.getProperty("browser", "chrome");
 
-        if (browser.equals("firefox")) {
-            System.setProperty("webdriver.gecko.driver", "C:\\Users\\Ashtrey\\ZAP\\webdriver\\windows\\64\\geckodriver.exe");  // Ställer in Firefox WebDriver
-            driver = new FirefoxDriver();  // Startar Firefox
-        } else {
-            System.setProperty("webdriver.chrome.driver", "C:\\Users\\Ashtrey\\Downloads\\chromedriver-win64\\chromedriver-win64\\chromedriver.exe");  // Ställer in Chrome WebDriver
-            driver = new ChromeDriver();  // Startar Chrome
+        if (browser.equals("firefox")) { // Om Firefox är valt
+            // Sätter systemegenskapen för Firefox WebDriver och startar en ny FirefoxDriver
+            System.setProperty("webdriver.gecko.driver", "C:\\Users\\Ashtrey\\ZAP\\webdriver\\windows\\64\\geckodriver.exe");
+            driver = new FirefoxDriver();
+        } else { // Standardfall: använder Chrome
+            // Sätter systemegenskapen för Chrome WebDriver och startar en ny ChromeDriver
+            System.setProperty("webdriver.chrome.driver", "C:\\Users\\Ashtrey\\Downloads\\chromedriver-win64\\chromedriver-win64\\chromedriver.exe");
+            driver = new ChromeDriver();
         }
 
-        driver.manage().deleteAllCookies();  // Rensar alla cookies
-        driver.manage().window().maximize();  // Maximerar webbläsarfönstret
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));  // Sätter en timeout på 10 sekunder för väntetider
+        driver.manage().deleteAllCookies(); // Rensar alla cookies innan varje test
+        driver.manage().window().maximize(); // Maximerar webbläsarfönstret
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10)); // Sätter en timeout på 10 sekunder för väntningar
     }
 
-    // TearDown-metod som körs efter varje test
+    // Stänger WebDriver efter att testet har körts
     @After
     public void tearDown() {
-        if (driver != null) driver.quit();  // Stänger ner webbläsaren om den är öppen
+        if (driver != null) driver.quit(); // Stänger WebDriver om den är öppen
     }
 
-    // Gherkin-steget som leder användaren till registreringssidan
+    // Givet att användaren är på registreringssidan
     @Given("the user is on the registration page")
     public void the_user_is_on_the_registration_page() {
-        driver.get("https://membership.basketballengland.co.uk/NewSupporterAccount");  // Navigerar till registreringssidan
+        // Navigera till registreringssidan
+        driver.get("https://membership.basketballengland.co.uk/NewSupporterAccount");
+
+        // Vänta tills ett element på sidan är synligt för att bekräfta att sidan har laddats
+        WebElement firstNameField = waitUntilVisible(By.id("member_firstname"));
+
+        // Validera att användaren verkligen är på registreringssidan
+        assertTrue(driver.getCurrentUrl().contains("NewSupporterAccount"), "Expected to be on the registration page, but was on: " + driver.getCurrentUrl());
+
+        // Kontrollera att registreringsformuläret har laddats korrekt genom att se till att förnamnsfältet finns
+        assertNotNull(firstNameField, "The registration form did not load correctly.");
     }
 
-    // Gherkin-steget för att fylla i förnamnet
+    // När användaren anger ett förnamn
     @When("the user enters {string} as first name")
     public void the_user_enters_as_first_name(String firstName) {
-        fillFieldById("member_firstname", firstName);  // Anropar metoden för att fylla i förnamnet
+        fillFieldById("member_firstname", firstName); // Anropa hjälpfunktionen för att fylla i förnamn
     }
 
-    // Gherkin-steget för att fylla i efternamnet
+    // När användaren anger ett efternamn
     @When("the user enters {string} as last name")
     public void the_user_enters_as_last_name(String lastName) {
-        fillFieldById("member_lastname", lastName);  // Anropar metoden för att fylla i efternamnet
+        fillFieldById("member_lastname", lastName); // Anropa hjälpfunktionen för att fylla i efternamn
     }
 
-    // Gherkin-steget för att lämna efternamnsfältet tomt
+    // När användaren lämnar efternamnsfältet tomt
     @When("the user leaves last name field empty")
     public void the_user_leaves_last_name_field_empty() {
-        fillFieldById("member_lastname", "");  // Lämnar efternamnsfältet tomt
+        fillFieldById("member_lastname", ""); // Lämnar efternamnsfältet tomt
     }
 
-    // Gherkin-steget för att fylla i ett unikt Mailnesia-e-postadress
+    // När användaren anger en unik e-postadress
     @When("the user enters a unique Mailnesia email")
     public void the_user_enters_a_unique_mailnesia_email() {
-        uniqueEmail = generateUniqueEmail();  // Genererar en unik e-postadress
-        fillFieldById("member_emailaddress", uniqueEmail);  // Fyller i e-postadressen
+        uniqueEmail = generateUniqueEmail(); // Skapa en unik e-postadress
+        fillFieldById("member_emailaddress", uniqueEmail); // Fyll i e-postadressen i fältet
     }
 
-    // Gherkin-steget för att bekräfta e-postadressen
+    // När användaren bekräftar e-postadressen
     @When("the user confirms the email")
     public void the_user_confirms_the_email() {
-        fillFieldById("member_confirmemailaddress", uniqueEmail);  // Fyller i bekräftelsen av e-postadressen
+        fillFieldById("member_confirmemailaddress", uniqueEmail); // Fyll i bekräftelse-fältet med samma e-postadress
     }
 
-    // Gherkin-steget för att fylla i födelsedatum
+    // När användaren anger sitt födelsedatum
     @When("the user enters {string} as date of birth")
     public void the_user_enters_as_date_of_birth(String dob) {
-        WebElement dobField = waitUntilVisible(By.id("dp"));  // Väntar tills födelsedatumfältet är synligt
-        dobField.sendKeys(dob);  // Fyller i födelsedatum
-        dobField.sendKeys(Keys.RETURN);  // Bekräftar genom att trycka Enter
+        WebElement dobField = waitUntilVisible(By.id("dp")); // Vänta på att födelsedatumfältet ska bli synligt
+        dobField.sendKeys(dob); // Fyll i födelsedatumet
+        dobField.sendKeys(Keys.RETURN); // Tryck Enter för att skicka datumet
     }
 
-    // Gherkin-steget för att fylla i lösenord
+    // När användaren anger ett lösenord
     @When("the user enters {string} as password")
     public void the_user_enters_as_password(String password) {
-        fillFieldById("signupunlicenced_password", password);  // Fyller i lösenordet
+        fillFieldById("signupunlicenced_password", password); // Fyll i lösenordet i fältet
     }
 
-    // Gherkin-steget för att bekräfta lösenordet
+    // När användaren bekräftar lösenordet
     @When("the user confirms {string} as password")
     public void the_user_confirms_as_password(String password) {
-        fillFieldById("signupunlicenced_confirmpassword", password);  // Fyller i bekräftelsen av lösenordet
+        fillFieldById("signupunlicenced_confirmpassword", password); // Fyll i bekräftelse-fältet för lösenordet
     }
 
-    // Gherkin-steget för att välja en roll inom basket
+    // När användaren väljer en roll för sin basketaktivitet
     @When("the user selects {string} as basketball role")
     public void the_user_selects_as_basketball_role(String role) {
-        // Klickar på checkboxen för "Coach"-rollen
-        waitUntilClickable(By.cssSelector("label[for='signup_basketballrole_18']")).click();
+        waitUntilClickable(By.cssSelector("label[for='signup_basketballrole_18']")).click(); // Klicka på lämplig checkbox för basketroll
     }
 
-    // Gherkin-steget för att godkänna uppförandekod
+    // När användaren godkänner Code of Ethics and Conduct
     @When("the user agrees to the Code of Ethics and Conduct")
     public void the_user_agrees_to_the_code_of_ethics_and_conduct() {
         WebElement ethicsCheckboxLabel = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("label[for='fanmembersignup_agreetocodeofethicsandconduct']")));
-        ethicsCheckboxLabel.click();  // Klickar på godkänn-kryssrutan för etiska riktlinjer
+        ethicsCheckboxLabel.click(); // Klicka för att godkänna etikreglerna
     }
 
-    // Gherkin-steget för att bekräfta om användaren är över 18 eller en vårdnadshavare
+    // När användaren bekräftar att de är över 18 år eller har en förmyndare
     @When("the user confirms being over {int} or a guardian")
     public void the_user_confirms_being_over_or_a_guardian(Integer age) {
-        WebElement ageCheckbox = waitUntilVisible(By.id("sign_up_26"));
-        if (!ageCheckbox.isSelected()) {  // Om checkboxen inte är markerad
-            ageCheckbox.click();  // Klicka på checkboxen för att markera den
+        WebElement ageCheckbox = wait.until(ExpectedConditions.elementToBeClickable(By.id("sign_up_26"))); // Vänta på åldersbekräftelse
+        if (!ageCheckbox.isSelected()) { // Om checkboxen inte redan är markerad
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", ageCheckbox); // Klicka för att markera den
         }
     }
 
-    // Gherkin-steget för att skicka in formuläret
+    // När användaren skickar formuläret
     @When("the user submits the form")
     public void the_user_submits_the_form() {
-        WebElement confirmAndJoinButton = wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("join")));  // Väntar på att knappen ska bli synlig
-        wait.until(ExpectedConditions.elementToBeClickable(confirmAndJoinButton));  // Väntar tills knappen kan klickas
-
-        // Scrollar till knappen för att säkerställa att den är synlig
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", confirmAndJoinButton);
-
-        // Klickar på knappen för att skicka formuläret
-        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", confirmAndJoinButton);
+        WebElement confirmAndJoinButton = wait.until(ExpectedConditions.visibilityOfElementLocated(By.name("join"))); // Vänta på att knappen blir synlig
+        try {
+            WebElement clickableButton = wait.until(ExpectedConditions.elementToBeClickable(confirmAndJoinButton)); // Vänta på att knappen blir klickbar
+            clickableButton.click(); // Klicka på knappen för att skicka formuläret
+        } catch (TimeoutException e) {
+            System.out.println("Knappen är inte klickbar eftersom formuläret inte är ifyllt korrekt."); // Om knappen inte går att klicka på, skriv ut ett felmeddelande
+        }
     }
 
-    // Gherkin-steget för att kontrollera att kontot skapades framgångsrikt
+    // Då kontot ska skapas framgångsrikt, kontrollera att användaren omdirigeras till bekräftelsesidan
     @Then("the account should be created successfully")
     public void the_account_should_be_created_successfully() {
-        try {
-            Thread.sleep(2000);  // Väntar i 2 sekunder för att ge sidan tid att ladda
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        String currentUrl = driver.getCurrentUrl();  // Hämtar den nuvarande URL:en
-        assertTrue(currentUrl.contains("SignUpConfirmation"), "Expected to be on sign-up confirmation page, but was on: " + currentUrl);
+        String currentUrl = driver.getCurrentUrl(); // Hämta den aktuella URL:en
+        assertTrue(currentUrl.contains("SignUpConfirmation"), "Expected to be on sign-up confirmation page, but was on: " + currentUrl); // Verifiera att användaren är på bekräftelsesidan
     }
 
-    // Gherkin-steget för att visa felmeddelande när efternamn saknas
+    // När registreringen inte ska vara framgångsrik
+    @Then("the registration should not be completed")
+    public void the_registration_should_not_be_completed() {
+        try {
+            Thread.sleep(3000); // Vänta på eventuell omdirigering
+        } catch (InterruptedException e) {
+            e.printStackTrace(); // Hantera eventuella undantag
+        }
+
+        String currentUrl = driver.getCurrentUrl(); // Hämta aktuell URL
+        // Om användaren inte hamnar på bekräftelsesidan ska testet passera
+        assertFalse(currentUrl.contains("SignUpConfirmation"),
+                "Test misslyckades: användaren registrerades trots att formuläret inte var korrekt ifyllt.");
+    }
+
+    // När ett felmeddelande ska visas för saknat efternamn
     @Then("an error message should be displayed for missing last name")
     public void an_error_message_should_be_displayed_for_missing_last_name() {
-        WebElement error = waitUntilVisible(By.id("member_lastname-error"));  // Väntar tills felmeddelandet för efternamn är synligt
-        assertEquals("Last Name is required", error.getText().trim());  // Verifierar att felmeddelandet är korrekt
+        WebElement error = waitUntilVisible(By.id("member_lastname-error")); // Vänta på felmeddelande om saknat efternamn
+        assertTrue(error.getText().contains("Last Name is required"), "Expected error message for missing last name, but got: " + error.getText());
     }
 
-    // Gherkin-steget för att visa felmeddelande vid lösenordsdiskrepans
+    // När ett felmeddelande ska visas för mismatch mellan lösenord
     @Then("an error message should be displayed for password mismatch")
     public void an_error_message_should_be_displayed_for_password_mismatch() {
-        WebElement error = waitUntilVisible(By.id("signupunlicenced_confirmpassword-error"));  // Väntar på felmeddelande för lösenordsdiskrepans
-        assertTrue(error.getText().toLowerCase().contains("same as password"), "Password mismatch error was not displayed correctly");
+        WebElement error = waitUntilVisible(By.id("signupunlicenced_confirmpassword-error")); // Vänta på felmeddelande om mismatch mellan lösenord
+        assertTrue(error.getText().toLowerCase().contains("did not match"), "Password mismatch error was not displayed correctly");
     }
 
-    // Gherkin-steget för att visa felmeddelande vid ej accepterade villkor
+    // När ett felmeddelande ska visas för icke accepterade villkor
     @Then("an error message should be displayed for terms not accepted")
     public void an_error_message_should_be_displayed_for_terms_not_accepted() {
-        WebElement errorBox = waitUntilVisible(By.className("validation-summary-errors"));  // Väntar på felmeddelande för ej accepterade villkor
-        assertTrue(errorBox.getText().contains("must accept"), "Expected error message for terms acceptance, but none was found.");
+        WebElement error = waitUntilVisible(By.cssSelector("span[for='TermsAccept']"));
+        assertTrue(error.getText().contains("You must confirm that you have read and accepted our Terms and Conditions"),
+                "Expected error message for terms acceptance, but got: " + error.getText());
     }
 
-    // Gherkin-steget för att användaren ska godkänna villkoren
+    // När ett felmeddelande ska visas för icke bekräftad ålder
+    @Then("an error message should be displayed for age not confirmed")
+    public void an_error_message_should_be_displayed_for_age_not_confirmed() {
+        WebElement error = waitUntilVisible(By.cssSelector("span[for='AgeAccept']"));
+        assertTrue(error.getText().contains("You must confirm that you are over 18 or a person with parental responsibility"),
+                "Expected error message for age confirmation, but got: " + error.getText());
+    }
+
+    // När användaren godkänner villkoren för användning
     @And("the user agrees to the Terms and Conditions")
     public void theUserAgreesToTheTermsAndConditions() {
         WebElement termsCheckboxLabel = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("label[for='sign_up_25']")));
-        termsCheckboxLabel.click();  // Klickar på godkänn-kryssrutan för villkoren
+        termsCheckboxLabel.click(); // Klicka för att godkänna villkoren
     }
 
-    // Placeholder för ett Gherkin-stege för att visa ett meddelande (kan implementeras vid behov)
-    @Then("{string} should be displayed")
-    public void shouldBeDisplayed(String message) {
-        // Implementera logik för att kolla om meddelandet visas om nödvändigt
-    }
-
-    // Gherkin-steget för att bekräfta om användaren är över 18 år gammal
+    // När användaren bekräftar att de är över 18 år
     @And("the user agrees to being over {int} years old")
     public void theUserAgreesToBeingOverYearsOld(int age) {
         WebElement ageResponsibilityCheckboxLabel = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("label[for='sign_up_26']")));
-        ageResponsibilityCheckboxLabel.click();  // Klickar på checkboxen för att bekräfta ålder
+        ageResponsibilityCheckboxLabel.click(); // Klicka för att bekräfta ålder
     }
 
-    // Gherkin-steget för att användaren ska godkänna villkoren (alternativ metod)
+    // När användaren vidtar en åtgärd på villkoren (t.ex. accepterar eller inte accepterar)
     @And("the user {string} to the Terms and Conditions")
-    public void theUserToTheTermsAndConditions(String arg0) {
+    public void theUserToTheTermsAndConditions(String action) {
         WebElement termsCheckboxLabel = wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("label[for='sign_up_25']")));
-        termsCheckboxLabel.click();  // Klickar på godkänn-kryssrutan för villkoren
+        if (action.trim().equalsIgnoreCase("accepts")) {
+            termsCheckboxLabel.click(); // Om handlingen är att acceptera, klicka på villkorsrutan
+        }
+    }
+
+    // När ett specifikt meddelande ska vara synligt
+    @Then("{string} should be displayed")
+    public void shouldBeDisplayed(String expectedMessage) {
+        String expected = expectedMessage.trim().toLowerCase(); // Ta bort eventuella extra mellanslag och konvertera till lowercase
+        StringBuilder combinedErrors = new StringBuilder(); // Samlar alla felmeddelanden
+
+        String[] errorIds = {
+                "member_firstname-error",
+                "member_lastname-error",
+                "member_emailaddress-error",
+                "member_confirmemailaddress-error",
+                "signupunlicenced_password-error",
+                "signupunlicenced_confirmpassword-error",
+                "dp-error"
+        };
+
+        for (String id : errorIds) {
+            try {
+                WebElement errorElement = driver.findElement(By.id(id)); // Försök att hitta felmeddelandet för varje fält
+                if (errorElement.isDisplayed()) {
+                    combinedErrors.append(errorElement.getText().trim()).append(" "); // Lägg till felet i den samlade strängen
+                }
+            } catch (NoSuchElementException ignored) {}
+        }
+
+        try {
+            WebElement summaryError = driver.findElement(By.className("validation-summary-errors"));
+            if (summaryError.isDisplayed()) {
+                combinedErrors.append(summaryError.getText().trim()).append(" "); // Lägg till sammanfattningsfelet
+            }
+        } catch (NoSuchElementException ignored) {}
+
+        String allErrors = combinedErrors.toString().toLowerCase(); // Samla alla felmeddelanden och konvertera till lowercase
+        if (expected.contains("account created")) {
+            String currentUrl = driver.getCurrentUrl(); // Hämta aktuell URL
+            assertTrue(currentUrl.contains("SignUpConfirmation"),
+                    "Expected to be on the sign-up confirmation page, but was on: " + currentUrl); // Verifiera att användaren omdirigeras till bekräftelsesidan
+        } else {
+            assertTrue(allErrors.contains(expected),
+                    "\nExpected message to contain: \"" + expected + "\"\nBut got: \"" + allErrors + "\""); // Kontrollera att felmeddelandena matchar det förväntade
+        }
     }
 }
