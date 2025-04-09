@@ -24,7 +24,7 @@ public class RegistrationSteps {
     // Hjälpmetod som genererar en unik e-postadress med Mailnesia
     private String generateUniqueEmail() {
         String uniquePart = UUID.randomUUID().toString().substring(0, 8); // Skapar en unik del genom att ta en del av en UUID
-        return "testuser_" + uniquePart + "@mailnesia.com"; // Returnerar e-post med unikt suffix
+        return "kallekofot_" + uniquePart + "@mailnesia.com"; // Returnerar e-post med unikt suffix
     }
 
     // Väntar på att ett element ska bli synligt på sidan
@@ -71,7 +71,7 @@ public class RegistrationSteps {
         if (driver != null) driver.quit(); // Stänger WebDriver om den är öppen
     }
 
-    // Givet att användaren är på registreringssidan
+    // Given att användaren är på registreringssidan
     @Given("the user is on the registration page")
     public void the_user_is_on_the_registration_page() {
         // Navigera till registreringssidan
